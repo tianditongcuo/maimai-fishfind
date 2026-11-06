@@ -1,16 +1,22 @@
 # 更新日志
 
+## 1.2.3
+
+### 安全加固：图片下载的重定向逐跳校验
+
+- 插件中心的静态审核建议：`_download_image` 用 `urllib.urlopen` 会自动跟随 3xx，
+  而 Node 侧的 `safe-fetch` 是逐跳重新校验，两边不一致。
+- 现在用一个自定义 `HTTPRedirectHandler`：**每一跳都重新做一次内网/保留地址检查**，
+  另外在下载完成后还会再校验一次最终 URL（防止中间层偷偷跳转）。
+- 同时把校验逻辑抽成 `_url_rejection_reason()`，错误原因（协议、账号信息、DNS、内网地址）会写进日志。
+
+### 新增自检（5 项）
+
+- 云元数据地址 `169.254.169.254`、内网段 `192.168.x`、带 userinfo 的 URL 被拒
+- 公网地址放行
+- **重定向到 `127.0.0.1` 被拦截**
+
 ## 1.2.2
-
-### 适配 MaiBot 插件中心（plugin-repo）的提交规则
-
-- 仓库根目录移除 `config.toml`：配置由 Runner 依据 `config.py` 的 `config_model` 自动生成，
-  仓库只保留 `config.example.toml`，并把 `/config.toml` 加入 `.gitignore`。
-- `host_application.max_version` 由 `1.99.99` 改为 `1.3.99`：
-  插件中心规定版本号第一、二位不能填 `99`/`999`（`1.99.99` 会被判为无效）。
-- README 的安装/配置说明同步更新。
-
-## 1.2.1
 ## 1.2.1
 
 - 仓库上线：<https://github.com/tianditongcuo/maimai-fishfind>

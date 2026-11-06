@@ -30,11 +30,12 @@ import socket
 import subprocess
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from maibot_sdk import Command, MaiBotPlugin, Tool
 from maibot_sdk.types import ToolParameterInfo, ToolParamType
@@ -168,6 +169,25 @@ def _is_transient(error: BaseException) -> bool:
 
     text = str(error)
     return any(marker in text for marker in TRANSIENT_MARKERS)
+
+
+class _SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """HTTP 重定向时逐跳重新校验目标地址。
+
+    urllib 默认会自动跟随 3xx，如果不拦，一个公网 URL 就能把我们带到
+    127.0.0.1 / 169.254.169.254 这类内网地址上。这里把每一跳都交给
+    ``validate(new_url)`` 检查，不通过就中止下载。
+    """
+
+    def __init__(self, validate: Callable[[str], str]) -> None:
+        self._validate = validate
+
+    def redirect_request(self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str) -> Any:
+        target = urllib.parse.urljoin(getattr(req, "full_url", "") or "", str(newurl))
+        reason = self._validate(target)
+        if reason:
+            raise urllib.error.URLError(f"重定向被拒绝：{target}（{reason}）")
+        return super().redirect_request(req, fp, code, msg, headers, target)
 
 
 def _reason_hint(reason: str) -> str:
@@ -821,33 +841,60 @@ class FishFindPlugin(MaiBotPlugin):
                     return raw, "url"
         return None
 
-    def _download_image(self, url: str) -> bytes | None:
-        """下载图片，带内网地址拦截与大小上限（在子线程里跑）。"""
+    def _url_rejection_reason(self, url: str) -> str:
+        """检查一个图片地址是否安全；返回空串表示放行，否则返回原因。"""
 
-        limit = int(self._cfg().runtime.max_image_mb) * 1024 * 1024
-        parsed = urllib.parse.urlparse(url)
-        if parsed.scheme not in ("http", "https") or not parsed.hostname:
-            return None
         try:
-            infos = socket.getaddrinfo(parsed.hostname, None)
+            parsed = urllib.parse.urlparse(url)
+        except ValueError:
+            return "地址无法解析"
+        if parsed.scheme not in ("http", "https"):
+            return f"不支持的协议 {parsed.scheme or '空'}"
+        if not parsed.hostname:
+            return "缺少主机名"
+        if parsed.username or parsed.password:
+            return "地址里带账号信息"
+        try:
+            port = parsed.port or (443 if parsed.scheme == "https" else 80)
+        except ValueError:
+            return "端口不合法"
+        try:
+            infos = socket.getaddrinfo(parsed.hostname, port)
         except OSError as exc:
-            self.ctx.logger.warning(f"{self._title()}：图片域名解析失败 %s：%s", parsed.hostname, exc)
-            return None
+            return f"域名解析失败（{exc}）"
         for info in infos:
             try:
                 address = ipaddress.ip_address(info[4][0])
             except ValueError:
-                return None
+                return f"地址无法解析（{info[4][0]}）"
             if not address.is_global:
-                self.ctx.logger.warning(f"{self._title()}：拒绝下载内网地址 %s", info[4][0])
-                return None
+                return f"内网/保留地址 {address}"
+        return ""
+
+    def _download_image(self, url: str) -> bytes | None:
+        """下载图片，带内网地址拦截（含重定向逐跳校验）与大小上限（在子线程里跑）。"""
+
+        limit = int(self._cfg().runtime.max_image_mb) * 1024 * 1024
+        reason = self._url_rejection_reason(url)
+        if reason:
+            self.ctx.logger.warning(f"{self._title()}：拒绝下载 %s（%s）", url, reason)
+            return None
 
         request = urllib.request.Request(
             url,
             headers={"User-Agent": "maibot-fishfind/1.0", "Accept": "image/*"},
         )
+        # 自定义 opener：每一个 3xx 目标都会再过一次 _url_rejection_reason
+        opener = urllib.request.build_opener(_SafeRedirectHandler(self._url_rejection_reason))
         try:
-            with urllib.request.urlopen(request, timeout=20) as response:  # noqa: S310 - 已校验 scheme/host
+            with opener.open(request, timeout=20) as response:
+                final_url = response.geturl()
+                final_reason = self._url_rejection_reason(final_url)
+                if final_reason:
+                    self.ctx.logger.warning(
+                        f"{self._title()}：下载最终落到 %s（%s），已拒绝", final_url, final_reason
+                    )
+                    return None
                 if getattr(response, "status", 200) != 200:
                     return None
                 data = response.read(limit + 1)
