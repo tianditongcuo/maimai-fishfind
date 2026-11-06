@@ -1,0 +1,23 @@
+{
+  "name": "coser-image-search",
+  "version": "1.0.0",
+  "description": "给一张图反查 coser 的社媒账号（谷歌 Lens / SauceNAO / trace.moe 多引擎）；可命令行用，也可接进 OneBot 机器人当指令",
+  "type": "module",
+  "bin": {
+    "coser-image-search": "bin/fish.mjs"
+  },
+  "main": "src/fish-find-chicken.js",
+  "exports": {
+    ".": "./src/fish-find-chicken.js",
+    "./onebot": "./adapters/onebot.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node bin/fish.mjs --check"
+  },
+  "keywords": ["reverse-image-search", "coser", "google-lens", "saucenao", "onebot", "qq"],
+  "license": "MIT",
+  "dependencies": {}
+}

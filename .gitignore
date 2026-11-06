@@ -1,0 +1,9 @@
+config_back/
+__pycache__/
+*.pyc
+state/
+tmp/
+data/
+quota.json
+*.zip
+vendor/fish/state/

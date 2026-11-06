@@ -1,0 +1,42 @@
+[plugin]
+enabled = true
+config_version = "1.0.0"
+# 显示名：回话标题会变成「🎯 麦麦找鸡结果」，日志前缀也用它。
+display_name = "麦麦找鸡"
+# 召唤词：填「麦麦找鸡」就等于 /麦麦找鸡，前面的斜杠会自动加。
+# 改完要在 WebUI 里重载插件（或重启 Maibot）才生效——命令正则是加载时注册的。
+trigger_words = [
+    "麦麦找鸡",
+    "鱼鱼找鸡",
+]
+
+[engines]
+# saucenao 查真人 cosplay / 同人图最有用（国内需走代理）；tracemoe 只认动漫截图、可直连。
+engines = ["lens", "saucenao", "tracemoe"]
+# 反查引擎走的 HTTP 代理，例如 http://127.0.0.1:7890；留空 = 直连。
+# trace.moe 会自动绕过代理；关掉代理软件时记得清空这里。
+proxy = ""
+# 相似度门槛：saucenao 的「只是长得像」通常只有 30~50%，低于门槛不报。
+min_similarity = 0.8
+timeout_seconds = 90
+# 整次搜索的总时限（秒）：超过就放弃、回「搜索超时」，并杀掉还在跑的 node 进程。
+search_deadline_seconds = 180
+max_accounts = 3
+strict_consensus = true
+
+[access]
+# 留空 = 所有群都能用。填了群号之后只有列表里的群能用。
+group_whitelist = []
+allow_private = true
+cooldown_seconds = 30
+per_user_daily = 20
+per_group_daily = 100
+
+[runtime]
+# 留空自动找：PATH 里的 node → Program Files\nodejs → D:\Nodejs 等。
+node_path = ""
+max_image_mb = 10
+
+[reply]
+announce = true
+max_chars = 1200
