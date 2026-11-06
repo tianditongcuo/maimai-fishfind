@@ -1,3 +1,6 @@
+# 这是示例配置：复制成 config.toml 后按需修改。
+# 也可以什么都不做——插件首次加载时，Maibot 会自动按 config.py 的默认值生成 config.toml。
+
 [plugin]
 enabled = true
 config_version = "1.0.0"

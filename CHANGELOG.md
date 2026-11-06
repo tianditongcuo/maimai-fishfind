@@ -1,5 +1,16 @@
 # 更新日志
 
+## 1.2.2
+
+### 适配 MaiBot 插件中心（plugin-repo）的提交规则
+
+- 仓库根目录移除 `config.toml`：配置由 Runner 依据 `config.py` 的 `config_model` 自动生成，
+  仓库只保留 `config.example.toml`，并把 `/config.toml` 加入 `.gitignore`。
+- `host_application.max_version` 由 `1.99.99` 改为 `1.3.99`：
+  插件中心规定版本号第一、二位不能填 `99`/`999`（`1.99.99` 会被判为无效）。
+- README 的安装/配置说明同步更新。
+
+## 1.2.1
 ## 1.2.1
 
 - 仓库上线：<https://github.com/tianditongcuo/maimai-fishfind>

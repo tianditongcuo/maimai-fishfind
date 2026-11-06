@@ -16,7 +16,8 @@
 
 | 路径 | 是什么 | 谁写的 |
 |---|---|---|
-| `plugin.py` / `config.py` / `config.toml` / `_manifest.json` | Maibot 插件层（Python） | 本衍生作品 |
+| `plugin.py` / `config.py` / `_manifest.json` | Maibot 插件层（Python） | 本衍生作品 |
+| `config.example.toml` | 配置示例（真正的 `config.toml` 首次加载时自动生成） | 本衍生作品 |
 | `vendor/fish/` | 上游「鱼鱼找鸡 v1.0.0」的 Node 命令行，**已裁剪修改** | 小鲸鱼（原始）+ 本衍生作品（修改） |
 
 ---
@@ -26,6 +27,8 @@
 1. 从 GitHub 拿代码：`git clone https://github.com/tianditongcuo/maimai-fishfind.git`，
    然后把目录**重命名为 `maimai_fishfind`**，放进 `my-maibot/plugins/`（Maibot 是按目录名加载的）。
    也可以直接下载 Releases 里的 zip 解压。
+   仓库里**不包含** `config.toml`：插件首次加载时 Maibot 会按 `config.py` 的默认值自动生成；
+   想改也可以先 `cp config.example.toml config.toml`。
 2. 机器上要有 **Node.js 20+**。查找顺序：`runtime.node_path` → `PATH` 里的 `node` →
    `Program Files\nodejs\node.exe`、`D:\Nodejs\node.exe`。
 3. 重启 Maibot，或从 WebUI 重新加载插件。启动日志里应出现：
@@ -96,7 +99,7 @@ trigger_words = ["麦麦找鸡", "鱼鱼找鸡", "查图"]
 
 ## 3. 配置
 
-配置文件 `config.toml`，也可以在 WebUI 里改。
+配置文件 `config.toml`（首次加载自动生成；模板见 `config.example.toml`），也可以在 WebUI 里改。
 
 | 配置 | 默认 | 说明 |
 |---|---|---|
@@ -272,4 +275,4 @@ node bin\fish.mjs 你的图.jpg --engines lens --proxy http://127.0.0.1:7890
 
 ---
 
-版本 1.2.1 · 插件 ID `maimai.fishfind` · 需要 Maibot ≥ 1.0.0、maibot_sdk ≥ 2.0.0、Node.js ≥ 20
+版本 1.2.2 · 插件 ID `maimai.fishfind` · 需要 Maibot ≥ 1.0.0、maibot_sdk ≥ 2.0.0、Node.js ≥ 20
